@@ -1,5 +1,6 @@
 #include "vm.h"
 #include "debug.h"
+#include "compiler.h"
 
 VM::VM(){
     m_chunk = nullptr;
@@ -74,8 +75,7 @@ InterpretResult VM::run(){
 #undef READ_CONSTANT
 }
 
-InterpretResult VM::interpret(const Chunk &chunk){
-    m_chunk = new Chunk(chunk);
-    m_ip = m_chunk->getFirstCode();
-    return run();
+InterpretResult VM::interpret(const std::string& source){
+    compile(source);
+    return INTERPRET_OK;
 }

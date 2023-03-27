@@ -4,8 +4,8 @@
 
 typedef enum{
     INTERPRET_OK,
-    INTEPRET_COMPILE_ERROR,
-    INTEPRET_RUNTIME_ERROR
+    INTERPRET_COMPILE_ERROR,
+    INTERPRET_RUNTIME_ERROR
 }InterpretResult;
 
 class VM{
@@ -20,5 +20,5 @@ public:
     VM();
     ~VM();
 
-    InterpretResult interpret(const Chunk &chunk);
+    InterpretResult interpret(const std::string& source);
 };
