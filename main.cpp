@@ -44,7 +44,9 @@ static std::string readFile(const std::string& path){
 
 static void runFile(const std::string& path){
     VM vm;
+    std::cout<<path<<std::endl;
     std::string source = readFile(path);
+    std::cout<<"source: "<<source<<std::endl;
     InterpretResult result = vm.interpret(source);
 
     if(result == INTERPRET_COMPILE_ERROR) exit(65);

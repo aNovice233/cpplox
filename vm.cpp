@@ -76,6 +76,16 @@ InterpretResult VM::run(){
 }
 
 InterpretResult VM::interpret(const std::string& source){
-    compile(source);
-    return INTERPRET_OK;
+    Chunk chunk;
+    Parser parser(source, &chunk);
+    //创建空的chunk，传给编译前，编译器来填充
+    if(!parser.compile()){
+        return INTERPRET_COMPILE_ERROR;
+    }
+
+    m_chunk = &chunk;
+    m_ip = m_chunk->getFirstCode();
+
+    InterpretResult result = run();
+    return result;
 }

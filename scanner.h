@@ -52,7 +52,7 @@ private:
     TokenType checkKeyword(int start, int length, const char* rest, TokenType type);
 
 public:
-    Scanner(const std::string source);
+    Scanner(const std::string& source);
     ~Scanner();
 
     Token scanToken();

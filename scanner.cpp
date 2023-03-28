@@ -154,7 +154,7 @@ Token Scanner::string(){
     return makeToken(TOKEN_STRING);
 }
 
-Scanner::Scanner(const std::string source){
+Scanner::Scanner(const std::string& source){
     m_start = &source[0];
     m_current = &source[0];
     m_line = 1;
