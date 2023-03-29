@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include "chunk.h"
+#include "value.h"
 
 Chunk::Chunk(){
     
@@ -46,5 +47,5 @@ uint8_t Chunk::getInstruction(int offset) const{
 }
 
 void Chunk::printValue(int offset) const{
-    printf("%g",m_constants[offset]);
+    printf("%g",AS_NUMBER(m_constants[offset]));
 }

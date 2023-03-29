@@ -18,8 +18,8 @@ static void repl(){
             std::cout<<std::endl;
             break;
         }
-
         vm.interpret(line);
+        
     }
 }
 
