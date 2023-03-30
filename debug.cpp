@@ -10,7 +10,7 @@ static int constantInstruction(const char *name, const Chunk &chunk, int offset)
     //constant 常数下标
     uint8_t constantIndex = chunk.getInstruction(offset + 1);
     printf("%-16s %4d ",name, constantIndex);
-    chunk.printValue(constantIndex);
+    printValue(chunk.getConstant(constantIndex));
     std::cout<<std::endl;
     return offset + 2;
 }

@@ -8,8 +8,9 @@
 #include "vm.h"
 #include "compiler.h"
 
+VM vm;
+
 static void repl(){
-    VM vm;
     char line[1024];
     for(;;){
         std::cout<<"> ";
@@ -43,7 +44,6 @@ static std::string readFile(const std::string& path){
 }
 
 static void runFile(const std::string& path){
-    VM vm;
     std::cout<<path<<std::endl;
     std::string source = readFile(path);
     std::cout<<"source: "<<source<<std::endl;

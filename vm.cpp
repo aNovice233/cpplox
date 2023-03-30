@@ -2,11 +2,13 @@
 #include "vm.h"
 #include "debug.h"
 #include "value.h"
+#include "object.h"
 #include "compiler.h"
 
 VM::VM(){
     m_chunk = nullptr;
     m_ip = nullptr;
+    m_objects = nullptr;
 }
 
 VM::~VM(){
@@ -14,6 +16,7 @@ VM::~VM(){
     m_ip = nullptr;
     while(!m_stack.empty())
         m_stack.pop();
+    freeObjects();
 }
 
 void VM::resetStack(){
@@ -39,6 +42,18 @@ void VM::runtimeError(const char* format, ...) {
 }
 
 Value VM::peek(int distance){
+    // if(distance == 0)return m_stack.top();
+    // std::stack<Value> out;
+    // do{
+    //     out.push(m_stack.top());
+    //     m_stack.pop();
+    // }while(distance--);
+    // Value v = out.top();
+    // while(!out.empty()){
+    //     m_stack.push(out.top());
+    //     out.pop();
+    // }
+    // return v;
     Value* stackTop;
     stackTop = &m_stack.top();
     return stackTop[-distance];
@@ -46,6 +61,17 @@ Value VM::peek(int distance){
 
 static bool isFalsey(Value value){
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+void VM::concatenate() {
+    ObjString* b = AS_STRING(m_stack.top());
+    m_stack.pop();
+    ObjString* a = AS_STRING(m_stack.top());
+    m_stack.pop();
+    std::string chars = a->m_string;
+    chars+=b->m_string;
+    ObjString* result = makeString(chars, chars.length());
+    m_stack.push(OBJ_VAL(result));
 }
 
 InterpretResult VM::run(){
@@ -61,7 +87,7 @@ InterpretResult VM::run(){
             m_stack.pop();    \
             double a = AS_NUMBER(m_stack.top());   \
             m_stack.pop();    \
-            m_stack.push(valueType(a op b));   \
+            m_stack.push(NUMBER_VAL(a op b));   \
         }while(false)
 
     for (;;) {
@@ -105,7 +131,23 @@ InterpretResult VM::run(){
             }
             case OP_GREATER:  BINARY_OP(BOOL_VAL, >); break;
             case OP_LESS:     BINARY_OP(BOOL_VAL, <); break;
-            case OP_ADD:      BINARY_OP(NUMBER_VAL, +); break;
+            case OP_ADD: {
+                if (IS_OBJ(peek(0)) && IS_OBJ(peek(1))) {
+                    if (IS_STRING(peek(0)) && IS_STRING(peek(1)))
+                        concatenate();
+                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    double b = AS_NUMBER(m_stack.top());
+                    m_stack.pop();
+                    double a = AS_NUMBER(m_stack.top());
+                    m_stack.pop();
+                    m_stack.push(NUMBER_VAL(a + b));
+                } else {
+                runtimeError(
+                    "Operands must be two numbers or two strings.");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
+            }
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             case OP_DIVIDE:   BINARY_OP(NUMBER_VAL, /); break;
@@ -121,6 +163,7 @@ InterpretResult VM::run(){
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 Value tmp = m_stack.top();
+                m_stack.pop();
                 m_stack.push(NUMBER_VAL(-AS_NUMBER(tmp)));
                 break;
             }
@@ -136,6 +179,14 @@ InterpretResult VM::run(){
 #undef READ_BYTE
 #undef BINARY_OP
 #undef READ_CONSTANT
+}
+
+void VM::changeObjects(Obj* object){
+    m_objects = object;
+}
+
+Obj* VM::getObjects(){
+    return m_objects;
 }
 
 InterpretResult VM::interpret(const std::string& source){

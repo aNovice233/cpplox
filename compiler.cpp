@@ -1,6 +1,7 @@
 #include <iostream>
 #include "compiler.h"
 #include "value.h"
+#include "object.h"
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
@@ -26,7 +27,7 @@ ParseRule Parser::m_rules[] = {
   [TOKEN_LESS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
   [TOKEN_IDENTIFIER]    = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_STRING]        = {NULL,                        NULL,   PREC_NONE},
+  [TOKEN_STRING]        = {(ParseFn)&Parser::string,    NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {(ParseFn)&Parser::number,    NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
   [TOKEN_CLASS]         = {NULL,                        NULL,   PREC_NONE},
@@ -184,6 +185,11 @@ ParseRule* Parser::getRule(TokenType type){
 void Parser::number(){
     double value = strtod(m_previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
+}
+
+void Parser::string() {
+    emitConstant(OBJ_VAL(copyString(m_previous.start+1 ,
+                                  m_previous.length - 2)));
 }
 
 void Parser::parsePrecedence(Precedence precedence){

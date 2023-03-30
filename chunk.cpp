@@ -45,7 +45,3 @@ uint8_t* Chunk::getFirstCode() const{
 uint8_t Chunk::getInstruction(int offset) const{
     return m_code[offset];
 }
-
-void Chunk::printValue(int offset) const{
-    printf("%g",AS_NUMBER(m_constants[offset]));
-}

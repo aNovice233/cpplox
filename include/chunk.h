@@ -40,6 +40,4 @@ public:
     Value getConstant(int offset) const;
     uint8_t* getFirstCode() const;
     uint8_t getInstruction(int offset) const;
-
-    void printValue(int offset) const;
 };

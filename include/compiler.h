@@ -60,6 +60,7 @@ private:
 
     ParseRule* getRule(TokenType type);
     void number(); //指向下面函数的指针
+    void string();
     void parsePrecedence(Precedence precedence); //解析给定优先级和更高优先级的表达式
     void expression();
     void endCompiler();
