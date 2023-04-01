@@ -171,10 +171,14 @@ InterpretResult VM::run(){
                 m_stack.push(NUMBER_VAL(-AS_NUMBER(tmp)));
                 break;
             }
-            case OP_RETURN: {
-                printTop();
+            case OP_PRINT: {
+                printValue(m_stack.top());
                 m_stack.pop();
-                std::cout<<std::endl;
+                std::cout<< std::endl;
+                break;
+            }
+            case OP_RETURN: {
+                // Exit interpreter.
                 return INTERPRET_OK;
             }
         }

@@ -95,6 +95,16 @@ void Parser::advance(){
     }
 }
 
+bool Parser::match(TokenType type) {
+  if (!check(type)) return false;
+  advance();
+  return true;
+}
+
+bool Parser::check(TokenType type) {
+  return m_current.type == type;
+}
+
 void Parser::consume(TokenType type, const char* message){
     if(m_current.type == type){
         advance();
@@ -212,11 +222,27 @@ void Parser::expression(){
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
+void Parser::printStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+void Parser::declaration(){
+    statement();
+}
+
+void Parser::statement(){
+    if (match(TOKEN_PRINT)) {
+        printStatement();
+  }
+}
+
 bool Parser::compile() {
     advance();
-    expression();
-    //编译后处于源代码末尾，检查EOF
-    consume(TOKEN_EOF, "Expect end of expression.");
+    while (!match(TOKEN_EOF)) {
+        declaration();
+  }
     endCompiler();
     return !m_hadError;
 }

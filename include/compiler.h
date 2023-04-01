@@ -41,6 +41,8 @@ private:
     void errorAtCurrent(const char* message);
     void error(const char* message);
     void errorAt(Token* token, const char* message);
+    bool match(TokenType type);
+    bool check(TokenType type);
 
     //发出字节码
     void emitByte(uint8_t byte);
@@ -63,6 +65,9 @@ private:
     void string();
     void parsePrecedence(Precedence precedence); //解析给定优先级和更高优先级的表达式
     void expression();
+    void printStatement();
+    void declaration();
+    void statement();
     void endCompiler();
 
 public:
