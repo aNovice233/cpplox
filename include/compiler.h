@@ -43,6 +43,7 @@ private:
     void errorAt(Token* token, const char* message);
     bool match(TokenType type);
     bool check(TokenType type);
+    void synchronize();
 
     //发出字节码
     void emitByte(uint8_t byte);
@@ -64,7 +65,14 @@ private:
     void number(); //指向下面函数的指针
     void string();
     void parsePrecedence(Precedence precedence); //解析给定优先级和更高优先级的表达式
+    uint8_t identifierConstant(Token* name);
     void expression();
+    void varDeclaration();
+    void namedVariable(Token name);
+    void variable();
+    uint8_t parseVariable(const char* errorMessage);
+    void defineVariable(uint8_t global);
+    void expressionStatement();
     void printStatement();
     void declaration();
     void statement();

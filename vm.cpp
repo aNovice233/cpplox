@@ -20,7 +20,11 @@ VM::~VM(){
     for (auto it = m_strings.begin(); it != m_strings.end(); ++it) {
         delete it->second.as.obj; // 销毁 ObjString 对象
     }
+    for (auto it = m_globals.begin(); it != m_globals.end(); ++it) {
+        delete it->second.as.obj; // 销毁 ObjString 对象
+    }
     m_strings.clear();
+    m_globals.clear();
 }
 
 void VM::resetStack(){
@@ -46,18 +50,6 @@ void VM::runtimeError(const char* format, ...) {
 }
 
 Value VM::peek(int distance){
-    // if(distance == 0)return m_stack.top();
-    // std::stack<Value> out;
-    // do{
-    //     out.push(m_stack.top());
-    //     m_stack.pop();
-    // }while(distance--);
-    // Value v = out.top();
-    // while(!out.empty()){
-    //     m_stack.push(out.top());
-    //     out.pop();
-    // }
-    // return v;
     Value* stackTop;
     stackTop = &m_stack.top();
     return stackTop[-distance];
@@ -81,6 +73,7 @@ void VM::concatenate() {
 InterpretResult VM::run(){
 #define READ_BYTE() (*m_ip++)
 #define READ_CONSTANT() (m_chunk->getConstant(READ_BYTE()))
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
         do{ \
             if(!IS_NUMBER(peek(0))|| !IS_NUMBER(peek(1))){ \
@@ -125,6 +118,24 @@ InterpretResult VM::run(){
             case OP_NIL: m_stack.push(NIL_VAL); break;
             case OP_TRUE: m_stack.push(BOOL_VAL(true)); break;
             case OP_FALSE: m_stack.push(BOOL_VAL(false)); break;
+            case OP_POP: m_stack.pop(); break;
+            case OP_GET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                Value value;
+                if (!m_globals.count(name->m_string)) {
+                runtimeError("Undefined variable '%s'.", name->m_string);
+                return INTERPRET_RUNTIME_ERROR;
+                }
+                value = m_globals.find(name->m_string)->second;
+                m_stack.push(value);
+                break;
+            }
+            case OP_DEFINE_GLOBAL: {
+                ObjString* name = READ_STRING();
+                m_globals.emplace(name->m_string, peek(0));
+                m_stack.pop();
+                break;
+            }
             case OP_EQUAL: {
                 Value b = m_stack.top();
                 m_stack.pop();
@@ -185,8 +196,9 @@ InterpretResult VM::run(){
     }
 
 #undef READ_BYTE
-#undef BINARY_OP
 #undef READ_CONSTANT
+#undef READ_STRING
+#undef BINARY_OP
 }
 
 int VM::countString(const char* s){

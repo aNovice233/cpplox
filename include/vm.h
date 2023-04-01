@@ -15,6 +15,7 @@ class VM{
     uint8_t *m_ip;
     std::stack<Value> m_stack;
     Obj*    m_objects;
+    std::unordered_map<std::string, Value> m_globals;
     std::unordered_map<std::string, Value> m_strings;
 
 private:

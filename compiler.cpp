@@ -26,7 +26,7 @@ ParseRule Parser::m_rules[] = {
   [TOKEN_GREATER_EQUAL] = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
   [TOKEN_LESS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
   [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-  [TOKEN_IDENTIFIER]    = {NULL,                        NULL,   PREC_NONE},
+  [TOKEN_IDENTIFIER]    = {(ParseFn)&Parser::variable,  NULL,   PREC_NONE},
   [TOKEN_STRING]        = {(ParseFn)&Parser::string,    NULL,   PREC_NONE},
   [TOKEN_NUMBER]        = {(ParseFn)&Parser::number,    NULL,   PREC_NONE},
   [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
@@ -103,6 +103,30 @@ bool Parser::match(TokenType type) {
 
 bool Parser::check(TokenType type) {
   return m_current.type == type;
+}
+
+void Parser::synchronize() {
+  m_panicMode = false;
+
+  while (m_current.type != TOKEN_EOF) {
+    if (m_previous.type == TOKEN_SEMICOLON) return;
+    switch (m_current.type) {
+      case TOKEN_CLASS:
+      case TOKEN_FUN:
+      case TOKEN_VAR:
+      case TOKEN_FOR:
+      case TOKEN_IF:
+      case TOKEN_WHILE:
+      case TOKEN_PRINT:
+      case TOKEN_RETURN:
+        return;
+
+      default:
+        ; // Do nothing.
+    }
+
+    advance();
+  }
 }
 
 void Parser::consume(TokenType type, const char* message){
@@ -218,8 +242,51 @@ void Parser::parsePrecedence(Precedence precedence){
     }
 }
 
+uint8_t Parser::identifierConstant(Token* name) {
+  return m_chunk->addConstant(OBJ_VAL(copyString(name->start,
+                                         name->length)));
+}
+
 void Parser::expression(){
     parsePrecedence(PREC_ASSIGNMENT);
+}
+
+void Parser::varDeclaration() {
+  uint8_t global = parseVariable("Expect variable name.");
+
+  if (match(TOKEN_EQUAL)) {
+    expression();
+  } else {
+    emitByte(OP_NIL);
+  }
+  consume(TOKEN_SEMICOLON,
+          "Expect ';' after variable declaration.");
+
+  defineVariable(global);
+}
+
+void Parser::namedVariable(Token name) {
+  uint8_t arg = identifierConstant(&name);
+  emitBytes(OP_GET_GLOBAL, arg);
+}
+
+void Parser::variable(){
+    namedVariable(m_previous);
+}
+
+uint8_t Parser::parseVariable(const char* errorMessage) {
+    consume(TOKEN_IDENTIFIER, errorMessage);
+    return identifierConstant(&m_previous);
+}
+
+void Parser::defineVariable(uint8_t global) {
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+void Parser::expressionStatement() {
+  expression();
+  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+  emitByte(OP_POP);
 }
 
 void Parser::printStatement() {
@@ -229,13 +296,20 @@ void Parser::printStatement() {
 }
 
 void Parser::declaration(){
-    statement();
+    if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+    if (m_panicMode) synchronize();
 }
 
 void Parser::statement(){
     if (match(TOKEN_PRINT)) {
         printStatement();
-  }
+    }else {
+        expressionStatement();
+    }
 }
 
 bool Parser::compile() {
