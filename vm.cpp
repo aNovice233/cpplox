@@ -17,6 +17,10 @@ VM::~VM(){
     while(!m_stack.empty())
         m_stack.pop();
     freeObjects();
+    for (auto it = m_strings.begin(); it != m_strings.end(); ++it) {
+        delete it->second.as.obj; // 销毁 ObjString 对象
+    }
+    m_strings.clear();
 }
 
 void VM::resetStack(){
@@ -179,6 +183,22 @@ InterpretResult VM::run(){
 #undef READ_BYTE
 #undef BINARY_OP
 #undef READ_CONSTANT
+}
+
+int VM::countString(const char* s){
+    std::string str = s;
+    return m_strings.count(s);
+}
+
+void VM::insertString(const char* s, Value value){
+    std::string str = s;
+    m_strings.emplace(str, value);
+}
+
+Value VM::getString(const char* s){
+    std::string str = s;
+    auto it = m_strings.find(s);
+    return it->second;
 }
 
 void VM::changeObjects(Obj* object){

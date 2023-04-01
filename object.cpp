@@ -75,19 +75,30 @@ Obj* allocateObj(ObjType type){
 }
 
 ObjString* makeString(std::string s, int length){
+    if(vm.countString(&s[0])){
+        return (ObjString*)AS_OBJ(vm.getString(&s[0]));
+    }
     ObjString* p = (ObjString*)allocateObj(OBJ_STRING);
     p->m_length = length;
     p->m_string = s;
+    //将新new的ObjString插入到VM的m_string上
+    vm.insertString(&s[0], OBJ_VAL(p));
     return p;   
 }
 
 //堆上创建一个ObjString对象并返回其指针
+//若该string已经有了则直接返回
 ObjString* copyString(const char* chars, int length) {
+    if(vm.countString(chars)){
+        return (ObjString*)AS_OBJ(vm.getString(chars));
+    }
     ObjString* p = (ObjString*)allocateObj(OBJ_STRING);
     p->m_length = length;
     p->m_string = *chars++;
     while(--length){
         p->m_string+=*chars++;
     }
+    //将新new的ObjString插入到VM的m_string上
+    vm.insertString(chars, OBJ_VAL(p));
     return p;
 }
