@@ -136,6 +136,16 @@ InterpretResult VM::run(){
                 m_stack.pop();
                 break;
             }
+            case OP_SET_GLOBAL: {
+                ObjString* name = READ_STRING();
+                if (!m_globals.count(name->m_string)) {
+                    runtimeError("Undefined variable '%s'.", name->m_string);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                m_globals.erase(name->m_string);
+                m_globals.emplace(name->m_string, peek(0));
+                break;
+            }
             case OP_EQUAL: {
                 Value b = m_stack.top();
                 m_stack.pop();
