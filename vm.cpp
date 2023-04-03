@@ -1,3 +1,7 @@
+//
+// Created by ethereal on 2023/4/2.
+//
+
 #include <stdarg.h>
 #include "vm.h"
 #include "debug.h"
@@ -89,7 +93,7 @@ InterpretResult VM::run(){
 
     for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
-    std::stack<Value> out;
+        std::stack<Value> out;
     while(!m_stack.empty()){
         out.push(m_stack.top());
         m_stack.pop();
@@ -123,8 +127,8 @@ InterpretResult VM::run(){
                 ObjString* name = READ_STRING();
                 Value value;
                 if (!m_globals.count(name->m_string)) {
-                runtimeError("Undefined variable '%s'.", name->m_string);
-                return INTERPRET_RUNTIME_ERROR;
+                    runtimeError("Undefined variable '%s'.", name->m_string);
+                    return INTERPRET_RUNTIME_ERROR;
                 }
                 value = m_globals.find(name->m_string)->second;
                 m_stack.push(value);
@@ -167,8 +171,8 @@ InterpretResult VM::run(){
                     m_stack.pop();
                     m_stack.push(NUMBER_VAL(a + b));
                 } else {
-                runtimeError(
-                    "Operands must be two numbers or two strings.");
+                    runtimeError(
+                            "Operands must be two numbers or two strings.");
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 break;

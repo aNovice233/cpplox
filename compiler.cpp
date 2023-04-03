@@ -1,3 +1,7 @@
+//
+// Created by ethereal on 2023/4/2.
+//
+
 #include <iostream>
 #include "compiler.h"
 #include "value.h"
@@ -7,46 +11,46 @@
 #endif
 
 ParseRule Parser::m_rules[] = {
-  [TOKEN_LEFT_PAREN]    = {(ParseFn)&Parser::grouping,  NULL,   PREC_NONE},
-  [TOKEN_RIGHT_PAREN]   = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_LEFT_BRACE]    = {NULL,                        NULL,   PREC_NONE}, 
-  [TOKEN_RIGHT_BRACE]   = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_COMMA]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_DOT]           = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_MINUS]         = {(ParseFn)&Parser::unary,     (ParseFn)&Parser::binary, PREC_TERM},
-  [TOKEN_PLUS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_TERM},
-  [TOKEN_SEMICOLON]     = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_SLASH]         = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
-  [TOKEN_STAR]          = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
-  [TOKEN_BANG]          = {(ParseFn)&Parser::unary,     NULL,   PREC_NONE},
-  [TOKEN_BANG_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
-  [TOKEN_EQUAL]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_EQUAL_EQUAL]   = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
-  [TOKEN_GREATER]       = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-  [TOKEN_GREATER_EQUAL] = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-  [TOKEN_LESS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-  [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-  [TOKEN_IDENTIFIER]    = {(ParseFn)&Parser::variable,  NULL,   PREC_NONE},
-  [TOKEN_STRING]        = {(ParseFn)&Parser::string,    NULL,   PREC_NONE},
-  [TOKEN_NUMBER]        = {(ParseFn)&Parser::number,    NULL,   PREC_NONE},
-  [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_CLASS]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_ELSE]          = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_FALSE]         = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
-  [TOKEN_FOR]           = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_FUN]           = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_IF]            = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_NIL]           = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
-  [TOKEN_OR]            = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_PRINT]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_RETURN]        = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_SUPER]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_THIS]          = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_TRUE]          = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
-  [TOKEN_VAR]           = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_WHILE]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_ERROR]         = {NULL,                        NULL,   PREC_NONE},
-  [TOKEN_EOF]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_LEFT_PAREN]    = {(ParseFn)&Parser::grouping,  NULL,   PREC_NONE},
+        [TOKEN_RIGHT_PAREN]   = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_LEFT_BRACE]    = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_RIGHT_BRACE]   = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_COMMA]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_DOT]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_MINUS]         = {(ParseFn)&Parser::unary,     (ParseFn)&Parser::binary, PREC_TERM},
+        [TOKEN_PLUS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_TERM},
+        [TOKEN_SEMICOLON]     = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_SLASH]         = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
+        [TOKEN_STAR]          = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
+        [TOKEN_BANG]          = {(ParseFn)&Parser::unary,     NULL,   PREC_NONE},
+        [TOKEN_BANG_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
+        [TOKEN_EQUAL]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_EQUAL_EQUAL]   = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
+        [TOKEN_GREATER]       = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
+        [TOKEN_GREATER_EQUAL] = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
+        [TOKEN_LESS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
+        [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
+        [TOKEN_IDENTIFIER]    = {(ParseFn)&Parser::variable,  NULL,   PREC_NONE},
+        [TOKEN_STRING]        = {(ParseFn)&Parser::string,    NULL,   PREC_NONE},
+        [TOKEN_NUMBER]        = {(ParseFn)&Parser::number,    NULL,   PREC_NONE},
+        [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_CLASS]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_ELSE]          = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_FALSE]         = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_FOR]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_FUN]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_IF]            = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_NIL]           = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_OR]            = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_PRINT]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_RETURN]        = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_SUPER]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_THIS]          = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_TRUE]          = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_VAR]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_WHILE]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_ERROR]         = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_EOF]           = {NULL,                        NULL,   PREC_NONE},
 };
 
 Parser::Parser(const std::string& source, Chunk* chunk){
@@ -96,37 +100,37 @@ void Parser::advance(){
 }
 
 bool Parser::match(TokenType type) {
-  if (!check(type)) return false;
-  advance();
-  return true;
+    if (!check(type)) return false;
+    advance();
+    return true;
 }
 
 bool Parser::check(TokenType type) {
-  return m_current.type == type;
+    return m_current.type == type;
 }
 
 void Parser::synchronize() {
-  m_panicMode = false;
+    m_panicMode = false;
 
-  while (m_current.type != TOKEN_EOF) {
-    if (m_previous.type == TOKEN_SEMICOLON) return;
-    switch (m_current.type) {
-      case TOKEN_CLASS:
-      case TOKEN_FUN:
-      case TOKEN_VAR:
-      case TOKEN_FOR:
-      case TOKEN_IF:
-      case TOKEN_WHILE:
-      case TOKEN_PRINT:
-      case TOKEN_RETURN:
-        return;
+    while (m_current.type != TOKEN_EOF) {
+        if (m_previous.type == TOKEN_SEMICOLON) return;
+        switch (m_current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_VAR:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
 
-      default:
-        ; // Do nothing.
+            default:
+                ; // Do nothing.
+        }
+
+        advance();
     }
-
-    advance();
-  }
 }
 
 void Parser::consume(TokenType type, const char* message){
@@ -157,18 +161,18 @@ void Parser::emitReturn(){
 void Parser::endCompiler(){
     emitReturn();
 #ifdef DEBUG_PRINT_CODE
-  if (!m_hadError) {
+    if (!m_hadError) {
     disassembleChunk(*m_chunk, "code");
   }
 #endif
 }
 
-void Parser::grouping(){
+void Parser::grouping(bool canAssign){
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
-void Parser::unary(){
+void Parser::unary(bool canAssign){
     TokenType operatorType = m_previous.type;
 
     parsePrecedence(PREC_UNARY);
@@ -183,7 +187,7 @@ void Parser::unary(){
 //解析中缀表达式时，左操作数已经编译过了（在栈内）
 //右操作数先入栈，在写二元运算符的字节码
 //二元运算符的右操作数优先级比自己高一级
-void Parser::binary(){
+void Parser::binary(bool canAssign){
     TokenType operatorType = m_previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -203,7 +207,7 @@ void Parser::binary(){
     }
 }
 
-void Parser::literal(){
+void Parser::literal(bool canAssign){
     switch(m_previous.type){
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
         case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -216,14 +220,14 @@ ParseRule* Parser::getRule(TokenType type){
     return &m_rules[type];
 }
 
-void Parser::number(){
+void Parser::number(bool canAssign){
     double value = strtod(m_previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
-void Parser::string() {
+void Parser::string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(m_previous.start+1 ,
-                                  m_previous.length - 2)));
+                                    m_previous.length - 2)));
 }
 
 void Parser::parsePrecedence(Precedence precedence){
@@ -233,18 +237,21 @@ void Parser::parsePrecedence(Precedence precedence){
         error("Expect expression");
         return;
     }
-
-    prefixRule();
+    bool canAssign = (precedence <= PREC_ASSIGNMENT);
+    (this->*prefixRule)(canAssign);
     while(precedence <= getRule(m_current.type)->precedence){
         advance();
         ParseFn infixRule = getRule(m_previous.type)->infix;
-        infixRule();
+        (this->*infixRule)(canAssign);
+    }
+    if (canAssign && match(TOKEN_EQUAL)) {
+        error("Invalid assignment target.");
     }
 }
 
 uint8_t Parser::identifierConstant(Token* name) {
-  return m_chunk->addConstant(OBJ_VAL(copyString(name->start,
-                                         name->length)));
+    return m_chunk->addConstant(OBJ_VAL(copyString(name->start,
+                                                   name->length)));
 }
 
 void Parser::expression(){
@@ -252,22 +259,22 @@ void Parser::expression(){
 }
 
 void Parser::varDeclaration() {
-  uint8_t global = parseVariable("Expect variable name.");
+    uint8_t global = parseVariable("Expect variable name.");
 
-  if (match(TOKEN_EQUAL)) {
-    expression();
-  } else {
-    emitByte(OP_NIL);
-  }
-  consume(TOKEN_SEMICOLON,
-          "Expect ';' after variable declaration.");
+    if (match(TOKEN_EQUAL)) {
+        expression();
+    } else {
+        emitByte(OP_NIL);
+    }
+    consume(TOKEN_SEMICOLON,
+            "Expect ';' after variable declaration.");
 
-  defineVariable(global);
+    defineVariable(global);
 }
 
-void Parser::namedVariable(Token name) {
+void Parser::namedVariable(Token name, bool canAssign) {
     uint8_t arg = identifierConstant(&name);
-    if (match(TOKEN_EQUAL)) {
+    if (canAssign && match(TOKEN_EQUAL)) {
         expression();
         emitBytes(OP_SET_GLOBAL, arg);
     } else {
@@ -275,8 +282,8 @@ void Parser::namedVariable(Token name) {
     }
 }
 
-void Parser::variable(){
-    namedVariable(m_previous);
+void Parser::variable(bool canAssign){
+    namedVariable(m_previous, canAssign);
 }
 
 uint8_t Parser::parseVariable(const char* errorMessage) {
@@ -289,9 +296,9 @@ void Parser::defineVariable(uint8_t global) {
 }
 
 void Parser::expressionStatement() {
-  expression();
-  consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
-  emitByte(OP_POP);
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+    emitByte(OP_POP);
 }
 
 void Parser::printStatement() {
@@ -321,7 +328,7 @@ bool Parser::compile() {
     advance();
     while (!match(TOKEN_EOF)) {
         declaration();
-  }
+    }
     endCompiler();
     return !m_hadError;
 }

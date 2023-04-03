@@ -18,12 +18,14 @@ typedef enum {
     PREC_PRIMARY
 } Precedence; //优先级，从低到高排序
 
-using ParseFn = void(*)();
+class Parser;
+
+typedef void (Parser::*ParseFn)(bool);
 
 typedef struct {
-  ParseFn prefix;   //以该类型标识为起点的前缀表达式的函数
-  ParseFn infix;    //左操作数后跟该着的类型的中缀表达式的函数
-  Precedence precedence;    //用该标识作为操作符的中缀表达式的优先级
+    ParseFn prefix;   //以该类型标识为起点的前缀表达式的函数
+    ParseFn infix;    //左操作数后跟该着的类型的中缀表达式的函数
+    Precedence precedence;    //用该标识作为操作符的中缀表达式的优先级
 } ParseRule;
 
 class Parser{
@@ -33,7 +35,7 @@ class Parser{
     bool m_panicMode;
     Scanner *m_sc;
     Chunk *m_chunk;
-    static ParseRule m_rules[];  
+    static ParseRule m_rules[];
 
 private:
     void advance(); //取下一个token，判断是否出错
@@ -52,24 +54,24 @@ private:
     void emitConstant(Value value);
 
     //解析前缀表达式
-    void grouping();
-    void unary();
-    
+    void grouping(bool canAssign);
+    void unary(bool canAssign);
+
 
     //解析中缀表达式
-    void binary();
+    void binary(bool canAssign);
 
-    void literal();
+    void literal(bool canAssign);
 
     ParseRule* getRule(TokenType type);
-    void number(); //指向下面函数的指针
-    void string();
+    void number(bool canAssign); //指向下面函数的指针
+    void string(bool canAssign);
     void parsePrecedence(Precedence precedence); //解析给定优先级和更高优先级的表达式
     uint8_t identifierConstant(Token* name);
     void expression();
     void varDeclaration();
-    void namedVariable(Token name);
-    void variable();
+    void namedVariable(Token name, bool canAssign);
+    void variable(bool canAssign);
     uint8_t parseVariable(const char* errorMessage);
     void defineVariable(uint8_t global);
     void expressionStatement();
@@ -84,4 +86,3 @@ public:
 
     bool compile();
 };
-
