@@ -241,10 +241,10 @@ Obj* VM::getObjects(){
 
 InterpretResult VM::interpret(const std::string& source){
     Chunk chunk;
-    Parser parser(source, &chunk);
+    Compiler compiler(source, &chunk);
     //创建空的chunk，传给编译器，编译器来填充
     std::cout<<std::endl<<"interpret source:"<<source<<std::endl;
-    if(!parser.compile()){
+    if(!compiler.compile()){
         return INTERPRET_COMPILE_ERROR;
     }
 

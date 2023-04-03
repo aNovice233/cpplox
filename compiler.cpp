@@ -10,61 +10,61 @@
 #include "debug.h"
 #endif
 
-ParseRule Parser::m_rules[] = {
-        [TOKEN_LEFT_PAREN]    = {(ParseFn)&Parser::grouping,  NULL,   PREC_NONE},
+ParseRule Compiler::m_rules[] = {
+        [TOKEN_LEFT_PAREN]    = {(ParseFn)&Compiler::grouping,  NULL,   PREC_NONE},
         [TOKEN_RIGHT_PAREN]   = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_LEFT_BRACE]    = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_RIGHT_BRACE]   = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_COMMA]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_DOT]           = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_MINUS]         = {(ParseFn)&Parser::unary,     (ParseFn)&Parser::binary, PREC_TERM},
-        [TOKEN_PLUS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_TERM},
+        [TOKEN_MINUS]         = {(ParseFn)&Compiler::unary,     (ParseFn)&Compiler::binary, PREC_TERM},
+        [TOKEN_PLUS]          = {NULL,                        (ParseFn)&Compiler::binary, PREC_TERM},
         [TOKEN_SEMICOLON]     = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_SLASH]         = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
-        [TOKEN_STAR]          = {NULL,                        (ParseFn)&Parser::binary, PREC_FACTOR},
-        [TOKEN_BANG]          = {(ParseFn)&Parser::unary,     NULL,   PREC_NONE},
-        [TOKEN_BANG_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
+        [TOKEN_SLASH]         = {NULL,                        (ParseFn)&Compiler::binary, PREC_FACTOR},
+        [TOKEN_STAR]          = {NULL,                        (ParseFn)&Compiler::binary, PREC_FACTOR},
+        [TOKEN_BANG]          = {(ParseFn)&Compiler::unary,     NULL,   PREC_NONE},
+        [TOKEN_BANG_EQUAL]    = {NULL,                        (ParseFn)&Compiler::binary, PREC_EQUALITY},
         [TOKEN_EQUAL]         = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_EQUAL_EQUAL]   = {NULL,                        (ParseFn)&Parser::binary, PREC_EQUALITY},
-        [TOKEN_GREATER]       = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-        [TOKEN_GREATER_EQUAL] = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-        [TOKEN_LESS]          = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-        [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Parser::binary, PREC_COMPARISON},
-        [TOKEN_IDENTIFIER]    = {(ParseFn)&Parser::variable,  NULL,   PREC_NONE},
-        [TOKEN_STRING]        = {(ParseFn)&Parser::string,    NULL,   PREC_NONE},
-        [TOKEN_NUMBER]        = {(ParseFn)&Parser::number,    NULL,   PREC_NONE},
+        [TOKEN_EQUAL_EQUAL]   = {NULL,                        (ParseFn)&Compiler::binary, PREC_EQUALITY},
+        [TOKEN_GREATER]       = {NULL,                        (ParseFn)&Compiler::binary, PREC_COMPARISON},
+        [TOKEN_GREATER_EQUAL] = {NULL,                        (ParseFn)&Compiler::binary, PREC_COMPARISON},
+        [TOKEN_LESS]          = {NULL,                        (ParseFn)&Compiler::binary, PREC_COMPARISON},
+        [TOKEN_LESS_EQUAL]    = {NULL,                        (ParseFn)&Compiler::binary, PREC_COMPARISON},
+        [TOKEN_IDENTIFIER]    = {(ParseFn)&Compiler::variable,  NULL,   PREC_NONE},
+        [TOKEN_STRING]        = {(ParseFn)&Compiler::string,    NULL,   PREC_NONE},
+        [TOKEN_NUMBER]        = {(ParseFn)&Compiler::number,    NULL,   PREC_NONE},
         [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_CLASS]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_ELSE]          = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_FALSE]         = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_FALSE]         = {(ParseFn)&Compiler::literal,   NULL,   PREC_NONE},
         [TOKEN_FOR]           = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_FUN]           = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_IF]            = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_NIL]           = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_NIL]           = {(ParseFn)&Compiler::literal,   NULL,   PREC_NONE},
         [TOKEN_OR]            = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_PRINT]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_RETURN]        = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_SUPER]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_THIS]          = {NULL,                        NULL,   PREC_NONE},
-        [TOKEN_TRUE]          = {(ParseFn)&Parser::literal,   NULL,   PREC_NONE},
+        [TOKEN_TRUE]          = {(ParseFn)&Compiler::literal,   NULL,   PREC_NONE},
         [TOKEN_VAR]           = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_WHILE]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_ERROR]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_EOF]           = {NULL,                        NULL,   PREC_NONE},
 };
 
-Parser::Parser(const std::string& source, Chunk* chunk){
+Compiler::Compiler(const std::string& source, Chunk* chunk){
     m_hadError = false;
     m_panicMode = false;
     m_chunk = chunk;
     m_sc = new Scanner(source);
 }
 
-Parser::~Parser(){
+Compiler::~Compiler(){
     delete m_sc;
 }
 
-void Parser::errorAt(Token* token, const char* message){
+void Compiler::errorAt(Token* token, const char* message){
     if(m_panicMode) return;
     m_panicMode = true; //设置之后字节码不会被执行
     std::cerr<<"[line "<<token->line<<"] error";
@@ -81,15 +81,15 @@ void Parser::errorAt(Token* token, const char* message){
     m_hadError = true;
 }
 
-void Parser::errorAtCurrent(const char* message){
+void Compiler::errorAtCurrent(const char* message){
     errorAt(&m_current, message);
 }
 
-void Parser::error(const char* message){
+void Compiler::error(const char* message){
     errorAt(&m_previous, message);
 }
 
-void Parser::advance(){
+void Compiler::advance(){
     m_previous = m_current;
     for(;;){
         m_current = m_sc->scanToken();
@@ -99,17 +99,17 @@ void Parser::advance(){
     }
 }
 
-bool Parser::match(TokenType type) {
+bool Compiler::match(TokenType type) {
     if (!check(type)) return false;
     advance();
     return true;
 }
 
-bool Parser::check(TokenType type) {
+bool Compiler::check(TokenType type) {
     return m_current.type == type;
 }
 
-void Parser::synchronize() {
+void Compiler::synchronize() {
     m_panicMode = false;
 
     while (m_current.type != TOKEN_EOF) {
@@ -133,7 +133,7 @@ void Parser::synchronize() {
     }
 }
 
-void Parser::consume(TokenType type, const char* message){
+void Compiler::consume(TokenType type, const char* message){
     if(m_current.type == type){
         advance();
         return;
@@ -141,24 +141,24 @@ void Parser::consume(TokenType type, const char* message){
     errorAtCurrent(message);
 }
 
-void Parser::emitByte(uint8_t byte){
+void Compiler::emitByte(uint8_t byte){
     m_chunk->writeChunk(byte, m_previous.line);
 }
 
-void Parser::emitBytes(uint8_t byte1, uint8_t byte2){
+void Compiler::emitBytes(uint8_t byte1, uint8_t byte2){
     emitByte(byte1);
     emitByte(byte2);
 }
 
-void Parser::emitConstant(Value value){
+void Compiler::emitConstant(Value value){
     emitBytes(OP_CONSTANT, m_chunk->addConstant(value));
 }
 
-void Parser::emitReturn(){
+void Compiler::emitReturn(){
     emitByte(OP_RETURN);
 }
 
-void Parser::endCompiler(){
+void Compiler::endCompiler(){
     emitReturn();
 #ifdef DEBUG_PRINT_CODE
     if (!m_hadError) {
@@ -167,12 +167,12 @@ void Parser::endCompiler(){
 #endif
 }
 
-void Parser::grouping(bool canAssign){
+void Compiler::grouping(bool canAssign){
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
 }
 
-void Parser::unary(bool canAssign){
+void Compiler::unary(bool canAssign){
     TokenType operatorType = m_previous.type;
 
     parsePrecedence(PREC_UNARY);
@@ -187,7 +187,7 @@ void Parser::unary(bool canAssign){
 //解析中缀表达式时，左操作数已经编译过了（在栈内）
 //右操作数先入栈，在写二元运算符的字节码
 //二元运算符的右操作数优先级比自己高一级
-void Parser::binary(bool canAssign){
+void Compiler::binary(bool canAssign){
     TokenType operatorType = m_previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -207,7 +207,7 @@ void Parser::binary(bool canAssign){
     }
 }
 
-void Parser::literal(bool canAssign){
+void Compiler::literal(bool canAssign){
     switch(m_previous.type){
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
         case TOKEN_NIL: emitByte(OP_NIL); break;
@@ -216,21 +216,21 @@ void Parser::literal(bool canAssign){
     }
 }
 
-ParseRule* Parser::getRule(TokenType type){
+ParseRule* Compiler::getRule(TokenType type){
     return &m_rules[type];
 }
 
-void Parser::number(bool canAssign){
+void Compiler::number(bool canAssign){
     double value = strtod(m_previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
-void Parser::string(bool canAssign) {
+void Compiler::string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(m_previous.start+1 ,
                                     m_previous.length - 2)));
 }
 
-void Parser::parsePrecedence(Precedence precedence){
+void Compiler::parsePrecedence(Precedence precedence){
     advance();
     ParseFn prefixRule = getRule(m_previous.type)->prefix;
     if(prefixRule == NULL){
@@ -249,16 +249,16 @@ void Parser::parsePrecedence(Precedence precedence){
     }
 }
 
-uint8_t Parser::identifierConstant(Token* name) {
+uint8_t Compiler::identifierConstant(Token* name) {
     return m_chunk->addConstant(OBJ_VAL(copyString(name->start,
                                                    name->length)));
 }
 
-void Parser::expression(){
+void Compiler::expression(){
     parsePrecedence(PREC_ASSIGNMENT);
 }
 
-void Parser::varDeclaration() {
+void Compiler::varDeclaration() {
     uint8_t global = parseVariable("Expect variable name.");
 
     if (match(TOKEN_EQUAL)) {
@@ -272,7 +272,7 @@ void Parser::varDeclaration() {
     defineVariable(global);
 }
 
-void Parser::namedVariable(Token name, bool canAssign) {
+void Compiler::namedVariable(Token name, bool canAssign) {
     uint8_t arg = identifierConstant(&name);
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
@@ -282,32 +282,32 @@ void Parser::namedVariable(Token name, bool canAssign) {
     }
 }
 
-void Parser::variable(bool canAssign){
+void Compiler::variable(bool canAssign){
     namedVariable(m_previous, canAssign);
 }
 
-uint8_t Parser::parseVariable(const char* errorMessage) {
+uint8_t Compiler::parseVariable(const char* errorMessage) {
     consume(TOKEN_IDENTIFIER, errorMessage);
     return identifierConstant(&m_previous);
 }
 
-void Parser::defineVariable(uint8_t global) {
+void Compiler::defineVariable(uint8_t global) {
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
-void Parser::expressionStatement() {
+void Compiler::expressionStatement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
     emitByte(OP_POP);
 }
 
-void Parser::printStatement() {
+void Compiler::printStatement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
 }
 
-void Parser::declaration(){
+void Compiler::declaration(){
     if (match(TOKEN_VAR)) {
         varDeclaration();
     } else {
@@ -316,7 +316,7 @@ void Parser::declaration(){
     if (m_panicMode) synchronize();
 }
 
-void Parser::statement(){
+void Compiler::statement(){
     if (match(TOKEN_PRINT)) {
         printStatement();
     }else {
@@ -324,7 +324,7 @@ void Parser::statement(){
     }
 }
 
-bool Parser::compile() {
+bool Compiler::compile() {
     advance();
     while (!match(TOKEN_EOF)) {
         declaration();

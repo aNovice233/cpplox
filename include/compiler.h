@@ -18,9 +18,9 @@ typedef enum {
     PREC_PRIMARY
 } Precedence; //优先级，从低到高排序
 
-class Parser;
+class Compiler;
 
-typedef void (Parser::*ParseFn)(bool);
+typedef void (Compiler::*ParseFn)(bool);
 
 typedef struct {
     ParseFn prefix;   //以该类型标识为起点的前缀表达式的函数
@@ -28,7 +28,7 @@ typedef struct {
     Precedence precedence;    //用该标识作为操作符的中缀表达式的优先级
 } ParseRule;
 
-class Parser{
+class Compiler{
     Token m_current;
     Token m_previous;
     bool m_hadError;
@@ -81,8 +81,8 @@ private:
     void endCompiler();
 
 public:
-    Parser(const std::string& source, Chunk* chunk);
-    ~Parser();
+    Compiler(const std::string& source, Chunk* chunk);
+    ~Compiler();
 
     bool compile();
 };
