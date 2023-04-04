@@ -13,6 +13,8 @@ typedef enum{
     OP_TRUE,
     OP_FALSE,
     OP_POP,
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
     OP_GET_GLOBAL,
     OP_DEFINE_GLOBAL,
     OP_SET_GLOBAL,
@@ -44,5 +46,6 @@ public:
     int getLine(int offset) const;
     Value getConstant(int offset) const;
     uint8_t* getFirstCode() const;
+    uint8_t getCode(int offset) const;
     uint8_t getInstruction(int offset) const;
 };

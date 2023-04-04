@@ -54,6 +54,11 @@
             "cwd": "/home/ethereal/cpplox",
             "binaryPath": "/home/ethereal/cpplox/main",
             "binaryArgs": []
+        },
+        {
+            "cwd": "/home/ethereal/cpplox",
+            "binaryPath": "/home/ethereal/cpplox/localVar",
+            "binaryArgs": []
         }
     ]
 }

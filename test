@@ -1,5 +1,0 @@
-print 1+2 class disass a+b == 1
-a = 21
-a != b
-if( a > b )
-    return

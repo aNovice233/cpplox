@@ -20,6 +20,13 @@ static int simpleInstruction(const char* name, int offset) {
   return offset + 1;
 }
 
+static int byteInstruction(const char* name, const Chunk& chunk,
+                           int offset) {
+  uint8_t slot = chunk.getCode(offset + 1);
+  printf("%-16s %4d\n", name, slot);
+  return offset + 2; 
+}
+
 int disassembleInstruction(const Chunk &chunk, int offset){
     std::cout << std::setw(4) << std::setfill('0') << offset<<" ";
     //与上一条代码同一行，打印 |
@@ -41,6 +48,10 @@ int disassembleInstruction(const Chunk &chunk, int offset){
             return simpleInstruction("OP_FALSE", offset);
         case OP_POP:
             return simpleInstruction("OP_POP", offset);
+        case OP_GET_LOCAL:
+            return byteInstruction("OP_GET_LOCAL", chunk, offset);
+        case OP_SET_LOCAL:
+            return byteInstruction("OP_SET_LOCAL", chunk, offset);
         case OP_GET_GLOBAL:
             return constantInstruction("OP_GET_GLOBAL", chunk, offset);
         case OP_DEFINE_GLOBAL:

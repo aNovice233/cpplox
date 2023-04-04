@@ -28,6 +28,12 @@ typedef struct {
     Precedence precedence;    //用该标识作为操作符的中缀表达式的优先级
 } ParseRule;
 
+//0是全局作用域，1是第一个顶层块，2是它内部的块
+typedef struct{
+    Token name;
+    int depth;      //声明局部变量的代码块深度
+} Local;
+
 class Compiler{
     Token m_current;
     Token m_previous;
@@ -36,6 +42,10 @@ class Compiler{
     Scanner *m_sc;
     Chunk *m_chunk;
     static ParseRule m_rules[];
+
+    Local m_locals[UINT8_COUNT];
+    int m_localCount;     //作用域中有多少局部变量
+    int m_scopeDepth;     //作用域深度，正在编译的当前代码外围的代码块数量
 
 private:
     void advance(); //取下一个token，判断是否出错
@@ -67,17 +77,29 @@ private:
     void number(bool canAssign); //指向下面函数的指针
     void string(bool canAssign);
     void parsePrecedence(Precedence precedence); //解析给定优先级和更高优先级的表达式
-    uint8_t identifierConstant(Token* name);
+    uint8_t identifierConstant(Token* name);    //chunk写入标识符的constant(Value类型)，返回下标
+    bool identifiersEqual(Token* a, Token* b);
+    int resolveLocal(Token* name);
     void expression();
-    void varDeclaration();
-    void namedVariable(Token name, bool canAssign);
+
+    void block();
+    void beginScope();
+    void endScope();
+
+    void addLocal(Token name);
+    void declareVariable();  //声明局部变量
+    void varDeclaration();   //变量声明解析
+    void namedVariable(Token name, bool canAssign);   //变量访问，解析已定义的变量
     void variable(bool canAssign);
     uint8_t parseVariable(const char* errorMessage);
+    void markInitialized();
     void defineVariable(uint8_t global);
+
     void expressionStatement();
     void printStatement();
     void declaration();
     void statement();
+
     void endCompiler();
 
 public:

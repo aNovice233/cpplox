@@ -42,6 +42,10 @@ uint8_t* Chunk::getFirstCode() const{
     }
 }
 
+uint8_t Chunk::getCode(int offset) const{
+    return m_code[offset];
+}
+
 uint8_t Chunk::getInstruction(int offset) const{
     return m_code[offset];
 }

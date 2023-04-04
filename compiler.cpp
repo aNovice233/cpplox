@@ -1,8 +1,5 @@
-//
-// Created by ethereal on 2023/4/2.
-//
-
 #include <iostream>
+#include <string.h>
 #include "compiler.h"
 #include "value.h"
 #include "object.h"
@@ -58,6 +55,9 @@ Compiler::Compiler(const std::string& source, Chunk* chunk){
     m_panicMode = false;
     m_chunk = chunk;
     m_sc = new Scanner(source);
+
+    m_localCount = 0;
+    m_scopeDepth = 0;
 }
 
 Compiler::~Compiler(){
@@ -65,8 +65,9 @@ Compiler::~Compiler(){
 }
 
 void Compiler::errorAt(Token* token, const char* message){
-    if(m_panicMode) return;
+    if(m_panicMode) return;     //出现一个错误后屏蔽后续的一连串错误
     m_panicMode = true; //设置之后字节码不会被执行
+
     std::cerr<<"[line "<<token->line<<"] error";
 
     if(token->type == TOKEN_EOF){
@@ -74,7 +75,7 @@ void Compiler::errorAt(Token* token, const char* message){
     }else if(token->type == TOKEN_ERROR){
 
     }else{
-        std::cerr<<" at "<<token->start;
+        std::cerr << " at '" << std::string(token->start, token->length) << "'  ";
     }
 
     std::cerr<<message<<std::endl;
@@ -109,6 +110,8 @@ bool Compiler::check(TokenType type) {
     return m_current.type == type;
 }
 
+//跳过标识，直到语句边界
+//如分号；或者查找能够开始一条语句标识，通常是控制流或声明语句的关键字之一
 void Compiler::synchronize() {
     m_panicMode = false;
 
@@ -254,8 +257,73 @@ uint8_t Compiler::identifierConstant(Token* name) {
                                                    name->length)));
 }
 
+bool Compiler::identifiersEqual(Token* a, Token* b){
+    if(a->length != b->length) return false;
+    return memcmp(a->start, b->start, a->length) == 0;
+}
+
+int Compiler::resolveLocal(Token* name){
+    for (int i = m_localCount - 1; i >= 0; i--) {
+        Local* local = &m_locals[i];
+        if (identifiersEqual(name, &local->name)) {
+            if (local->depth == -1) {
+                error("Can't read local variable in its own initializer.");
+            }
+            return i;
+        }
+    }
+    return -1;
+}
+
 void Compiler::expression(){
     parsePrecedence(PREC_ASSIGNMENT);
+}
+
+void Compiler::block(){
+    while(!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF)){
+        declaration();
+    }
+
+    consume(TOKEN_RIGHT_BRACE, "Expect '}' after block.");
+}
+
+void Compiler::beginScope(){
+    m_scopeDepth++;
+}
+
+void Compiler::endScope(){
+    m_scopeDepth--;
+    while(m_localCount > 0 && m_locals[m_localCount - 1].depth > m_scopeDepth){
+        emitByte(OP_POP);
+        m_localCount--;
+    }
+}
+
+void Compiler::addLocal(Token name){
+    if(m_localCount == UINT8_COUNT){
+        error("Too many local variables in function.");
+        return;
+    }
+    Local* local = &m_locals[m_localCount++];
+    local->name = name;
+    local->depth = -1;  //已声明还未初始化
+}
+
+//声明局部变量
+//全局变量是后期绑定的，编译器不会看到全局变量的声明
+void Compiler::declareVariable(){
+    if(m_scopeDepth == 0) return;
+    Token* name = &m_previous;
+    for(int i = m_localCount-1; i>=0; i--){
+        Local* local = &m_locals[i];
+        if(local->depth != -1 && local->depth < m_scopeDepth){
+            break;
+        }
+        if (identifiersEqual(name, &local->name)) {
+            error("Already a variable with this name in this scope.");
+        }
+    }
+    addLocal(*name);
 }
 
 void Compiler::varDeclaration() {
@@ -273,12 +341,23 @@ void Compiler::varDeclaration() {
 }
 
 void Compiler::namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(&name);  //返回-1表明是全局变量，否则返回在m_Locals数组中的位置
+    if (arg != -1) {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(&name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    }
+    //查找标识符后面的等号。如果找到了，我们就不会生成变量访问的代码，
+    //我们会编译所赋的值，然后生成一个赋值指令。
     if (canAssign && match(TOKEN_EQUAL)) {
         expression();
-        emitBytes(OP_SET_GLOBAL, arg);
+        emitBytes(setOp, (uint8_t)arg);
     } else {
-        emitBytes(OP_GET_GLOBAL, arg);
+        emitBytes(getOp, (uint8_t)arg);
     }
 }
 
@@ -288,10 +367,20 @@ void Compiler::variable(bool canAssign){
 
 uint8_t Compiler::parseVariable(const char* errorMessage) {
     consume(TOKEN_IDENTIFIER, errorMessage);
+    declareVariable();
+    if (m_scopeDepth > 0) return 0;
     return identifierConstant(&m_previous);
 }
 
+void Compiler::markInitialized(){
+    m_locals[m_localCount - 1].depth = m_scopeDepth;
+}
+
 void Compiler::defineVariable(uint8_t global) {
+    if (m_scopeDepth > 0) { //局部变量不需要写入chunk，它的值就在栈顶
+        markInitialized();  //例如var a = 1+2; 执行完之后栈顶就是3;
+        return;                 
+    }
     emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
@@ -313,13 +402,28 @@ void Compiler::declaration(){
     } else {
         statement();
     }
+    //恐慌模式下的错误恢复来减少它所报告的级联编译错误
+    //语句边界作为同步点，退出恐慌模式
     if (m_panicMode) synchronize();
 }
 
+/*
+statement      → exprStmt
+               | forStmt
+               | ifStmt
+               | printStmt
+               | returnStmt
+               | whileStmt
+               | block ;
+*/
 void Compiler::statement(){
     if (match(TOKEN_PRINT)) {
         printStatement();
-    }else {
+    } else if (match(TOKEN_LEFT_BRACE)) {   // { block
+    beginScope();
+    block();
+    endScope();
+    } else {
         expressionStatement();
     }
 }

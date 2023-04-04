@@ -34,6 +34,8 @@ public:
     void insertString(const char* s, Value value);
     Value getString(const char* s);
     void changeObjects(Obj* object);
+    Value getStack(uint8_t index);
+    void setStack(uint8_t index, Value value);
     Obj* getObjects();
     InterpretResult interpret(const std::string& source);
 };

@@ -46,7 +46,6 @@ static std::string readFile(const std::string& path){
 static void runFile(const std::string& path){
     std::cout<<path<<std::endl;
     std::string source = readFile(path);
-    std::cout<<"source: "<<source<<std::endl;
     InterpretResult result = vm.interpret(source);
 
     if(result == INTERPRET_COMPILE_ERROR) exit(65);
@@ -54,6 +53,8 @@ static void runFile(const std::string& path){
 }
 
 int main(int argc, char* argv[]){
+    argc = 2;
+    argv[1] = "test.txt";
     if(argc == 1){
         repl();
     }else if(argc == 2){

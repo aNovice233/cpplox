@@ -21,12 +21,17 @@ VM::~VM(){
     while(!m_stack.empty())
         m_stack.pop();
     freeObjects();
-    for (auto it = m_strings.begin(); it != m_strings.end(); ++it) {
-        delete it->second.as.obj; // 销毁 ObjString 对象
-    }
-    for (auto it = m_globals.begin(); it != m_globals.end(); ++it) {
-        delete it->second.as.obj; // 销毁 ObjString 对象
-    }
+    // if(!m_strings.empty()){
+    //     for (auto it = m_strings.begin(); it != m_strings.end(); ++it) {
+    //         delete it->second.as.obj; // 销毁 ObjString 对象
+    //     }
+    // }
+    // if(!m_globals.empty()){
+    //     for (auto it = m_globals.begin(); it != m_globals.end(); ++it) {
+    //         delete it->second.as.obj; // 销毁 ObjString 对象
+    //     }
+    // }
+
     m_strings.clear();
     m_globals.clear();
 }
@@ -123,6 +128,16 @@ InterpretResult VM::run(){
             case OP_TRUE: m_stack.push(BOOL_VAL(true)); break;
             case OP_FALSE: m_stack.push(BOOL_VAL(false)); break;
             case OP_POP: m_stack.pop(); break;
+            case OP_GET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                m_stack.push(getStack(slot)); 
+                break;
+            }
+            case OP_SET_LOCAL: {
+                uint8_t slot = READ_BYTE();
+                setStack(slot, peek(0));
+                break;
+            }
             case OP_GET_GLOBAL: {
                 ObjString* name = READ_STRING();
                 Value value;
@@ -231,6 +246,24 @@ Value VM::getString(const char* s){
     return it->second;
 }
 
+Value VM::getStack(uint8_t index){
+    Value* stackBottom;
+    int size = m_stack.size();
+    Value* stackTop;
+    stackTop = &m_stack.top();
+    stackBottom = &stackTop[-size+1];
+    return stackBottom[index];
+}
+
+void VM::setStack(uint8_t index, Value value){
+    Value* stackBottom;
+    int size = m_stack.size();
+    Value* stackTop;
+    stackTop = &m_stack.top();
+    stackBottom = &stackTop[-size+1];
+    stackBottom[index] = value;
+}
+
 void VM::changeObjects(Obj* object){
     m_objects = object;
 }
@@ -243,7 +276,6 @@ InterpretResult VM::interpret(const std::string& source){
     Chunk chunk;
     Compiler compiler(source, &chunk);
     //创建空的chunk，传给编译器，编译器来填充
-    std::cout<<std::endl<<"interpret source:"<<source<<std::endl;
     if(!compiler.compile()){
         return INTERPRET_COMPILE_ERROR;
     }
