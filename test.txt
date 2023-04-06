@@ -1,7 +1,0 @@
-{   
-    var a = "321";
-    {
-        var a = a;
-        print a;
-    }
-}

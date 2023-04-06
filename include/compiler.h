@@ -60,17 +60,16 @@ private:
     //发出字节码
     void emitByte(uint8_t byte);
     void emitBytes(uint8_t byte1, uint8_t byte2);
-    void emitReturn();
+    int  emitJump(uint8_t instruction);
     void emitConstant(Value value);
+    void emitReturn();
 
-    //解析前缀表达式
+    void patchJump(int offset);
+
+    //解析表达式
     void grouping(bool canAssign);
     void unary(bool canAssign);
-
-
-    //解析中缀表达式
     void binary(bool canAssign);
-
     void literal(bool canAssign);
 
     ParseRule* getRule(TokenType type);
@@ -96,6 +95,7 @@ private:
     void defineVariable(uint8_t global);
 
     void expressionStatement();
+    void ifStatement();
     void printStatement();
     void declaration();
     void statement();

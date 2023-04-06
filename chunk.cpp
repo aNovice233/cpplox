@@ -49,3 +49,7 @@ uint8_t Chunk::getCode(int offset) const{
 uint8_t Chunk::getInstruction(int offset) const{
     return m_code[offset];
 }
+
+void Chunk::changeCode(int offset, uint8_t content){
+    m_code[offset] = content;
+}

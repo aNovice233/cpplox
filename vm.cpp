@@ -82,6 +82,8 @@ void VM::concatenate() {
 InterpretResult VM::run(){
 #define READ_BYTE() (*m_ip++)
 #define READ_CONSTANT() (m_chunk->getConstant(READ_BYTE()))
+#define READ_SHORT() \
+    (m_ip += 2, (uint16_t)((m_ip[-2] << 8) | m_ip[-1]))
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
         do{ \
@@ -217,6 +219,16 @@ InterpretResult VM::run(){
                 std::cout<< std::endl;
                 break;
             }
+            case OP_JUMP: {
+                uint16_t offset = READ_SHORT();
+                m_ip += offset;
+                break;
+            }
+            case OP_JUMP_IF_FALSE: {
+                uint16_t offset = READ_SHORT();
+                if (isFalsey(peek(0))) m_ip += offset;
+                break;
+            }
             case OP_RETURN: {
                 // Exit interpreter.
                 return INTERPRET_OK;
@@ -225,6 +237,7 @@ InterpretResult VM::run(){
     }
 
 #undef READ_BYTE
+#undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP
@@ -285,5 +298,5 @@ InterpretResult VM::interpret(const std::string& source){
 
     InterpretResult result = run();
     resetStack();
-    return result;
+    return INTERPRET_OK;
 }

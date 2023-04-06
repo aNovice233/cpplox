@@ -28,6 +28,8 @@ typedef enum{
     OP_NOT,
     OP_NEGATE,
     OP_PRINT,
+    OP_JUMP,
+    OP_JUMP_IF_FALSE,
     OP_RETURN,  //从当前函数返回
 } OpCode;
 
@@ -48,4 +50,6 @@ public:
     uint8_t* getFirstCode() const;
     uint8_t getCode(int offset) const;
     uint8_t getInstruction(int offset) const;
+
+    void changeCode(int offset, uint8_t content);
 };
