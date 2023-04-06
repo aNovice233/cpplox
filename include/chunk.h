@@ -30,7 +30,8 @@ typedef enum{
     OP_PRINT,
     OP_JUMP,
     OP_JUMP_IF_FALSE,
-    OP_RETURN,  //从当前函数返回
+    OP_LOOP,
+    OP_RETURN,  
 } OpCode;
 
 class Chunk{

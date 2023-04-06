@@ -30,7 +30,7 @@ ParseRule Compiler::m_rules[] = {
         [TOKEN_IDENTIFIER]    = {(ParseFn)&Compiler::variable,  NULL,   PREC_NONE},
         [TOKEN_STRING]        = {(ParseFn)&Compiler::string,    NULL,   PREC_NONE},
         [TOKEN_NUMBER]        = {(ParseFn)&Compiler::number,    NULL,   PREC_NONE},
-        [TOKEN_AND]           = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_AND]           = {NULL,                        (ParseFn)&Compiler::and_,   PREC_AND},
         [TOKEN_CLASS]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_ELSE]          = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_FALSE]         = {(ParseFn)&Compiler::literal,   NULL,   PREC_NONE},
@@ -38,7 +38,7 @@ ParseRule Compiler::m_rules[] = {
         [TOKEN_FUN]           = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_IF]            = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_NIL]           = {(ParseFn)&Compiler::literal,   NULL,   PREC_NONE},
-        [TOKEN_OR]            = {NULL,                        NULL,   PREC_NONE},
+        [TOKEN_OR]            = {NULL,                        (ParseFn)&Compiler::or_,    PREC_OR},
         [TOKEN_PRINT]         = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_RETURN]        = {NULL,                        NULL,   PREC_NONE},
         [TOKEN_SUPER]         = {NULL,                        NULL,   PREC_NONE},
@@ -153,6 +153,17 @@ void Compiler::emitBytes(uint8_t byte1, uint8_t byte2){
     emitByte(byte2);
 }
 
+void Compiler::emitLoop(int loopStart){
+    emitByte(OP_LOOP);
+
+    // +2 是考虑到OP_LOOP指令自身操作数的大小，也需要跳过
+    int offset = m_chunk->getCount() - loopStart + 2;
+    if (offset > UINT16_MAX) error("Loop body too large.");
+
+    emitByte((offset >> 8) & 0xff);
+    emitByte(offset & 0xff);
+}
+
 int Compiler::emitJump(uint8_t instruction){
     emitByte(instruction);
     emitByte(0xff);
@@ -235,6 +246,29 @@ void Compiler::literal(bool canAssign){
         case TOKEN_TRUE: emitByte(OP_TRUE); break;
         default: return;
     }
+}
+
+//左侧表达式的值已经被编译了，运行时，结果在栈顶。
+//如果这个值为false，整个and结果为false，跳过右边操作数，栈顶就是
+//表达式结果，否则丢弃左值，计算右操作数，作为and结果。
+void Compiler::and_(bool canAssign){
+    int endJump = emitJump(OP_JUMP_IF_FALSE);
+
+    emitByte(OP_POP);
+    parsePrecedence(PREC_AND);
+
+    patchJump(endJump);
+}
+
+void Compiler::or_(bool canAssign){
+    int elseJump = emitJump(OP_JUMP_IF_FALSE);
+    int endJump = emitJump(OP_JUMP);
+
+    patchJump(elseJump);
+    emitByte(OP_POP);
+
+    parsePrecedence(PREC_OR);
+    patchJump(endJump);
 }
 
 ParseRule* Compiler::getRule(TokenType type){
@@ -408,6 +442,50 @@ void Compiler::expressionStatement() {
     emitByte(OP_POP);
 }
 
+void Compiler::forStatement() {
+    beginScope();   //for应该在一个作用域内
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'for'.");
+    if (match(TOKEN_SEMICOLON)) {
+        // 无初始化语句
+    } else if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        expressionStatement();
+    }
+
+    int loopStart = m_chunk->getCount();
+    int exitJump = -1;
+    if (!match(TOKEN_SEMICOLON)) {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expect ';' after loop condition.");
+
+        // Jump out of the loop if the condition is false.
+        exitJump = emitJump(OP_JUMP_IF_FALSE);
+        emitByte(OP_POP); // Condition.
+    }
+    if (!match(TOKEN_RIGHT_PAREN)) {
+        int bodyJump = emitJump(OP_JUMP);
+        int incrementStart = m_chunk->getCount();
+        expression();
+        emitByte(OP_POP);
+        consume(TOKEN_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        emitLoop(loopStart);
+        loopStart = incrementStart;
+        patchJump(bodyJump);
+    }
+
+    statement();
+    emitLoop(loopStart);
+
+    if (exitJump != -1) {
+        patchJump(exitJump);
+        emitByte(OP_POP); // Condition.
+    }
+
+    endScope();
+}
+
 void Compiler::ifStatement(){
     consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
     expression();
@@ -430,6 +508,23 @@ void Compiler::printStatement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
+}
+
+void Compiler::whileStatement(){
+    int loopStart = m_chunk->getCount();
+
+    consume(TOKEN_LEFT_PAREN, "Expect '(' after 'while'.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+    int exitJump = emitJump(OP_JUMP_IF_FALSE);
+    emitByte(OP_POP);
+    statement();    //循环体
+
+    emitLoop(loopStart);
+
+    patchJump(exitJump);
+    emitByte(OP_POP);
 }
 
 void Compiler::declaration(){
@@ -455,8 +550,12 @@ statement      → exprStmt
 void Compiler::statement(){
     if (match(TOKEN_PRINT)) {
         printStatement();
+    } else if (match(TOKEN_FOR)) {
+        forStatement();
     } else if (match(TOKEN_IF)) {
         ifStatement();
+    } else if (match(TOKEN_WHILE)) {
+        whileStatement();    
     } else if (match(TOKEN_LEFT_BRACE)) {   // { block
         beginScope();
         block();

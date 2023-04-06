@@ -60,6 +60,7 @@ private:
     //发出字节码
     void emitByte(uint8_t byte);
     void emitBytes(uint8_t byte1, uint8_t byte2);
+    void emitLoop(int loopStart);
     int  emitJump(uint8_t instruction);
     void emitConstant(Value value);
     void emitReturn();
@@ -71,6 +72,8 @@ private:
     void unary(bool canAssign);
     void binary(bool canAssign);
     void literal(bool canAssign);
+    void and_(bool canAssign);
+    void or_(bool canAssign);
 
     ParseRule* getRule(TokenType type);
     void number(bool canAssign); //指向下面函数的指针
@@ -95,8 +98,10 @@ private:
     void defineVariable(uint8_t global);
 
     void expressionStatement();
+    void forStatement();
     void ifStatement();
     void printStatement();
+    void whileStatement();
     void declaration();
     void statement();
 

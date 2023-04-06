@@ -1,13 +1,18 @@
-{   
+{
     var a = "321";
     {
-        if(a == "32"){
-            var b = 3333;
+        if(a == "32" and 1 == 0){
+            var b =3;
             print b;
-        } else{
-            var b = 1111;
+        }else {
+            var b = 4;
             print b;
+            for(var c = 1; c != 5; c = c+1){
+                print c;
+            }
         }
-        print a;
+        var b =5;
+        print b;
     }
 }
+
