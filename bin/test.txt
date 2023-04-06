@@ -1,0 +1,13 @@
+{   
+    var a = "321";
+    {
+        if(a == "32"){
+            var b = 3333;
+            print b;
+        } else{
+            var b = 1111;
+            print b;
+        }
+        print a;
+    }
+}
